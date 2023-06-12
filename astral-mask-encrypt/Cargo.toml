@@ -1,0 +1,22 @@
+[package]
+name = "astral-mask-encrypt"
+version = "0.1.0"
+authors = ["Nikaidou Haruki <[email protected]>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.21.2"
+byteorder = "1.4.3"
+sha2 = "0.10.6"
+threefish = "0.5.2"
+
+# logging
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["parking_lot"] }
+
+[dependencies.clap]
+version = "4.3.0"
+default-features = false
+features = ["std", "color", "help", "usage", "error-context", "derive"]
