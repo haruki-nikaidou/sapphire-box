@@ -12,12 +12,12 @@ pub struct Cli {
 pub enum Commands {
   #[command(about = "Encrypt a string with a password and seed")]
   KeyEncrypt {
-    #[arg(short, long, help = "The string to encrypt")]
+    #[arg(long, help = "The string to encrypt")]
     #[arg(required = true)]
     #[arg(value_name = "PLAINTEXT")]
     plaintext: String,
 
-    #[arg(short, long, help = "The password to encrypt the file with")]
+    #[arg(long, help = "The password to encrypt the file with")]
     #[arg(required = true)]
     #[arg(value_name = "PASSWORD")]
     password: String,

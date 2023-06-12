@@ -8,7 +8,6 @@ use clap::Parser;
 use cli::{Cli, Commands};
 
 fn main() {
-    println!("Hello, world!");
     let args = Cli::parse();
     match args.command {
         Commands::HashEncrypt { plaintext, hash } => {
