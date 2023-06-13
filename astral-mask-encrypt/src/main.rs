@@ -3,11 +3,22 @@ mod hash;
 mod cli;
 mod command;
 
-
 use clap::Parser;
 use cli::{Cli, Commands};
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
+
+fn setup_tracing() {
+  let subscriber = FmtSubscriber::builder()
+    .with_max_level(Level::INFO)
+    .with_target(false)
+    .finish();
+
+  tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+}
 
 fn main() {
+    setup_tracing();
     let args = Cli::parse();
     match args.command {
         Commands::HashEncrypt { plaintext, hash } => {

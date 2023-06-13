@@ -1,6 +1,6 @@
-extern crate sha2;
 use sha2::{Sha512, Digest};
 use std::cell::UnsafeCell;
+use std::ops::Deref;
 use std::thread;
 use std::sync::{Arc, mpsc};
 use std::time::Duration;
@@ -9,27 +9,32 @@ use std::time::Duration;
 /// It returns the number of cycles and hash result as `(loops_circle, hash_result)`.
 #[allow(dead_code)]
 pub fn mint_key_512(start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8>) {
-    let mut hasher = Sha512::new();
     let mut iterations = 0;
+    let mut hasher = Sha512::new();
+    hasher.update(&start);
+    let mut binding = hasher.finalize_reset();
+    let mut result = binding.as_slice();
 
     loop {
-        // Increment the iteration count
-        iterations += 1;
-
-        // Hash the input data
-        hasher.update(&start);
-        let result = hasher.finalize_reset();
-
         // Check if the first `zero_height` bits of the hash are zero
-        if check_zero_bits(&result, zero_height) {
+        if check_zero_bits(result, zero_height) {
             return (iterations, result.to_vec());
         }
+
+        // Hash the input data
+        hasher.update(&result);
+        binding = hasher.finalize_reset();
+        result = binding.as_slice();
+
+        // Increment the iteration count
+        iterations += 1;
     }
 }
 
 pub struct Monitor {
     counter: UnsafeCell<u64>,
 }
+
 impl Monitor {
     pub fn new() -> Self {
         Self {
@@ -45,23 +50,29 @@ impl Monitor {
         }
     }
 }
+
 unsafe impl Sync for Monitor {}
 
-pub unsafe fn async_mint_key_512 (monitor: Arc<Monitor>, start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8>) {
+pub unsafe fn async_mint_key_512(monitor: Arc<Monitor>, start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8>) {
+    let monitor = monitor.deref();
     let mut hasher = Sha512::new();
+    hasher.update(&start);
+    let mut binding = hasher.finalize_reset();
+    let mut result = binding.as_slice();
 
     loop {
-        // Increment the iteration count
-        monitor.plus_one();
-
-        // Hash the input data
-        hasher.update(&start);
-        let result = hasher.finalize_reset();
-
         // Check if the first `zero_height` bits of the hash are zero
-        if check_zero_bits(&result, zero_height) {
+        if check_zero_bits(result, zero_height) {
             return (monitor.get_number(), result.to_vec());
         }
+
+        // Hash the input data
+        hasher.update(&result);
+        binding = hasher.finalize_reset();
+        result = binding.as_slice();
+
+        // Increment the iteration count
+        monitor.plus_one();
     }
 }
 
@@ -73,10 +84,14 @@ pub unsafe fn hash_with_report(start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8
     let monitor_clone = Arc::clone(&monitor);
 
     thread::spawn(move || {
-        unsafe {
-            let result = async_mint_key_512(monitor_clone, start, zero_height);
-            sender.send(result).unwrap();
-        }
+        let result = unsafe { async_mint_key_512(monitor_clone, start, zero_height) };
+        match sender.send(result) {
+            Err(_) => {
+                tracing::error!("Bug: unable to send the result in hash_with_report function");
+                panic!("Bug: unable to send the result in hash_with_report function");
+            },
+            _ => {}
+        };
     });
 
     loop {
@@ -86,7 +101,7 @@ pub unsafe fn hash_with_report(start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8
         match receiver.try_recv() {
             Ok(result) => return result,
             Err(_) => {
-                println!("Minting Key: {} MH/s", million_circle_per_sec);
+                tracing::info!("Minting Key: {} MH/s", million_circle_per_sec);
                 completed_hash_circle = monitor.get_number();
             }
         }
@@ -94,10 +109,10 @@ pub unsafe fn hash_with_report(start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8
 }
 
 pub fn get_hash_starter(password: String, repeat: u32) -> Vec<u8> {
-    let mut password_bytes = password.into_bytes();
+    let cell = password.into_bytes();
+    let mut password_bytes = cell.clone();
     for _ in 0..repeat {
-        let clone = password_bytes.clone();
-        password_bytes.extend_from_slice(&clone);
+        password_bytes.extend_from_slice(&cell);
     }
     return password_bytes;
 }
@@ -116,5 +131,5 @@ fn check_zero_bits(hash: &[u8], zero_height: u16) -> bool {
         return false;
     }
 
-    true
+    return true;
 }
