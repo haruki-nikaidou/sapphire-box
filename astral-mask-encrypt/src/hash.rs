@@ -78,32 +78,50 @@ pub unsafe fn async_mint_key_512(monitor: Arc<Monitor>, start: Vec<u8>, zero_hei
 
 
 pub unsafe fn hash_with_report(start: Vec<u8>, zero_height: u16) -> (u64, Vec<u8>) {
-    let (sender, receiver) = mpsc::channel();
+    let (hash_sender, hash_receiver) = mpsc::channel();
+    let (counter_stop_sender, counter_stop_receiver) = mpsc::channel();
     let mut completed_hash_circle = 0;
     let monitor = Arc::new(Monitor::new());
-    let monitor_clone = Arc::clone(&monitor);
+    let monitor_clone1 = Arc::clone(&monitor);
+    let monitor_clone2 = Arc::clone(&monitor);
 
+    // async function
     thread::spawn(move || {
-        let result = unsafe { async_mint_key_512(monitor_clone, start, zero_height) };
-        match sender.send(result) {
+        let result = unsafe { async_mint_key_512(monitor_clone1, start, zero_height) };
+        match hash_sender.send(result) {
             Err(_) => {
                 tracing::error!("Bug: unable to send the result in hash_with_report function");
                 panic!("Bug: unable to send the result in hash_with_report function");
-            },
+            }
             _ => {}
         };
     });
 
-    loop {
-        thread::sleep(Duration::from_secs(20));
-        let circle_in_this_20s = monitor.get_number() - completed_hash_circle;
-        let million_circle_per_sec = (circle_in_this_20s as f64) / (20.0 * 1e6 as f64);
-        match receiver.try_recv() {
-            Ok(result) => return result,
-            Err(_) => {
-                tracing::info!("Minting Key: {} MH/s", million_circle_per_sec);
-                completed_hash_circle = monitor.get_number();
+    // report
+    thread::spawn(move || {
+        loop {
+            thread::sleep(Duration::from_secs(10));
+            let circle_in_this_20s = monitor_clone2.get_number() - completed_hash_circle;
+            let kilo_circle_per_sec = (circle_in_this_20s as f64) / (10.0 * 1e3 as f64);
+            match counter_stop_receiver.try_recv() {
+                Ok(_) => break,
+                Err(_) => {
+                    tracing::info!("Minting Key: {} KH/s", kilo_circle_per_sec);
+                    completed_hash_circle = monitor_clone2.get_number();
+                }
             }
+        }
+    });
+
+    // wait for the result
+    loop {
+        thread::sleep(Duration::from_secs(1));
+        match hash_receiver.try_recv() {
+            Ok(result) => {
+                counter_stop_sender.send(()).unwrap();
+                return result;
+            }
+            Err(_) => {}
         }
     }
 }
