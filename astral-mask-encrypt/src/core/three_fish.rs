@@ -1,38 +1,21 @@
 use threefish::Threefish512;
 use byteorder::{ByteOrder, LittleEndian};
+use crate::core::{pad,unpad};
 
 const DEFAULT_TWEAK: [u8; 16] = [0; 16];
 
-fn pad_plaintext(plaintext: &mut Vec<u8>) {
-    let block_size = 64;
-    let padding_value = (block_size - (plaintext.len() % block_size)) as u8;
+pub fn encrypt(plain_text: &Vec<u8>, key:&[u8;64]) -> Vec<u8> {
+    // pad the plaintext
+    let mut plain_text = plain_text.clone();
+    pad(&mut plain_text);
 
-    let padding = vec![padding_value; padding_value as usize];
-    plaintext.extend_from_slice(&padding);
-}
-
-fn unpad_plaintext(plaintext: &mut Vec<u8>) {
-    if let Some(&last_byte) = plaintext.last() {
-        let padding_value = last_byte as usize;
-
-        if padding_value <= plaintext.len() {
-            plaintext.truncate(plaintext.len() - padding_value);
-        }
-    }
-}
-
-
-pub fn three_fish_encrypt(key: [u8; 64], mut plaintext: Vec<u8>) -> Vec<u8> {
     // Create a new Three-fish-512 instance
     let cipher = Threefish512::new_with_tweak(&key, &DEFAULT_TWEAK);
-
-    // pad plaintext into 64n bytes
-    pad_plaintext(&mut plaintext);
 
     let mut ciphertext = Vec::new();
 
     // Convert plaintext bytes to u64 blocks and encrypt
-    for chunk in plaintext.chunks(64) {
+    for chunk in plain_text.chunks(64) {
         let mut block = [0u64; 8];
         LittleEndian::read_u64_into(chunk, &mut block);
 
@@ -46,7 +29,7 @@ pub fn three_fish_encrypt(key: [u8; 64], mut plaintext: Vec<u8>) -> Vec<u8> {
     return ciphertext;
 }
 
-pub fn three_fish_decrypt(key: &[u8; 64], ciphertext: Vec<u8>) -> Vec<u8> {
+pub fn decrypt(key: &[u8; 64], ciphertext: &Vec<u8>) -> Vec<u8> {
     let cipher = Threefish512::new_with_tweak(key, &DEFAULT_TWEAK);
 
     // Ensure the ciphertext length is a multiple of 64, the block size for Three-fish-512.
@@ -81,8 +64,7 @@ pub fn three_fish_decrypt(key: &[u8; 64], ciphertext: Vec<u8>) -> Vec<u8> {
     }
 
     // unpad plaintext
-
-    unpad_plaintext(&mut plaintext);
+    unpad(&mut plaintext);
 
     return plaintext;
 }
