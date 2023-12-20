@@ -19,13 +19,13 @@ contract KeyValueStore is ERC721URIStorage, Ownable {
         baseTokenURI = newBaseURI;
     }
 
-    constructor(string memory _baseTokenURI) 
+    constructor(string memory _baseTokenURI) payable 
         ERC721("AstralMaskStore", "AMS") Ownable(msg.sender) {
         updateBaseURI(_baseTokenURI);
     }
 
     // Set MetaId when mint
-    function mintToken(string memory metaId) public {
+    function newSheet(string memory metaId) public {
         uint256 newTokenId = tokenIdCounter;
         _safeMint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, string(abi.encodePacked(baseTokenURI, metaId)));
