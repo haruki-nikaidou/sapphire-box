@@ -4,23 +4,24 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract KeyValueStore is ERC721URIStorage {
+contract KeyValueStore is ERC721URIStorage, Ownable {
     // Each ERC721 token is a key to access the k-v sheet
     mapping(uint256 => mapping(string => string)) private keyValueStore;
 
     uint256 private tokenIdCounter;
 
-    string private baseURI;
+    string private baseTokenURI;
 
     // set `baseURI` (only owner)
     // the URI of each token is `baseURL + metaId`
     // When update `baseURI`, old tokens will not modify their URI
     function updateBaseURI(string memory newBaseURI) public onlyOwner {
-        baseURI = newBaseURI;
+        baseTokenURI = newBaseURI;
     }
 
-    constructor(string memory _baseTokenURI) ERC721("AstralMaskStore", "AMS") {
-        setBaseURI(_baseTokenURI);
+    constructor(string memory _baseTokenURI) 
+        ERC721("AstralMaskStore", "AMS") Ownable(msg.sender) {
+        updateBaseURI(_baseTokenURI);
     }
 
     // Set MetaId when mint
