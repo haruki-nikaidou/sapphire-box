@@ -2,19 +2,24 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface MetaStore {
     function addMeta(uint256 tokenId, string calldata _sheetName) external;
 }
 
-contract KeyValueStore is ERC721URIStorage, Ownable {
+contract KeyValueStore is ERC721URIStorage {
     // Each ERC721 token is a key to access the k-v sheet
     mapping(uint256 => mapping(string => string)) private keyValueStore;
-
     uint256 private tokenIdCounter;
+    
+    // Owner can set metaStoreAddress and baseTokenURI
     address private metaStoreAddress;
+    address private owner;
     string private baseTokenURI;
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
 
     // set `baseURI` (only owner)
     // the URI of each token is `baseURL + metaId`
@@ -24,7 +29,7 @@ contract KeyValueStore is ERC721URIStorage, Ownable {
     }
 
     constructor(string memory _baseTokenURI) payable 
-        ERC721("AstralMaskStore", "AMS") Ownable(msg.sender) {
+        ERC721("AstralMaskStore", "AMS") {
         updateBaseURI(_baseTokenURI);
     }
 
