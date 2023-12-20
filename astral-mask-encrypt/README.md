@@ -16,12 +16,9 @@ Astral Mask Encrypt Cli
 Usage: astral-mask-encrypt <COMMAND>
 
 Commands:
-  key-encrypt   Encrypt a string with a password and seed
-  hash-encrypt  Encrypt a string with a hash
-  mint-key      Generate the hash which is used to encrypt a string. Never save this hash anywhere!
-  key-decrypt   Decrypt a string with a password and seed
-  hash-decrypt  Decrypt a string with a hash
-  help          Print this message or the help of the given subcommand(s)
+  encrypt  Encrypt a string with a Combination Lock
+  decrypt  Decrypt a string which was encrypted with a Combination Lock
+  help     Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
@@ -36,8 +33,6 @@ astral-mask-encrypt key-encrypt --help
 
 ## Key Generation Algorithm
 
-First, encode the password provided by the user in utf8 as bytes. This byte string will be repeated `seed` times as the starting point of the hash loop.
+This algorithm is designed to generate cryptographic keys based on specified criteria for leading or trailing zeros in the hash output. 
 
-In the hash loop, the output of the last time is used as the input of this time for sha512. The loop will continue until the first `zero_height` bits are all 0.
-
-Computation time cannot be reduced by multithreaded parallel computation and dynamic planning.
+It starts by hashing an initial byte vector using SHA-512, and then iteratively modifies this hash according to a given set of conditions (Combination Lock), producing a series of keys.
