@@ -28,9 +28,11 @@ contract KeyValueStore is ERC721URIStorage {
         baseTokenURI = newBaseURI;
     }
 
-    constructor(string memory _baseTokenURI) payable 
+    constructor(string memory _baseTokenURI, address _metaStoreAddress) payable 
         ERC721("AstralMaskStore", "AMS") {
-        updateBaseURI(_baseTokenURI);
+            owner = msg.sender;
+            updateBaseURI(_baseTokenURI);
+            metaStoreAddress = _metaStoreAddress;
     }
 
     // create a sheet and mint a ERC720 token
