@@ -24,4 +24,4 @@ The project contains 3 main parts:
 
 + `astral-mask-encrypt` - a command line tool to encrypt and decrypt string using a key.
 + `astral-mask-storage` - a smart contract to store encrypted data on the blockchain.
-+ `astral-mask-ui` - a web application to manage encrypted data.
++ `astral-mask-dashboard` - a web application to manage encrypted data.
