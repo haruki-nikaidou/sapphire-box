@@ -1,5 +1,9 @@
 import callPolygon from "./polygonCall";
 
+addEventListener('fetch', (event: FetchEvent) => {
+    event.respondWith(handleRequest(event.request));
+});
+
 async function handleRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const pathSegments = url.pathname.split('/').filter(Boolean);
