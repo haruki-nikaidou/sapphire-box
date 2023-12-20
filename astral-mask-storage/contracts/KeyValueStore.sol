@@ -1,47 +1,47 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-contract KeyValueStore {
-    // storage the mapping of the key-value
-    mapping(string => string) public data;
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-    // storage the array of the keys
-    string[] public keys;
+contract KeyValueStore is ERC721URIStorage {
+    // Each ERC721 token is a key to access the k-v sheet
+    mapping(uint256 => mapping(string => string)) private keyValueStore;
 
-    // the owner of the contract
-    address public owner;
+    uint256 private tokenIdCounter;
 
-    // Set the `owner` to the sender
-    constructor() {
-        owner = msg.sender;
+    string private baseURI;
+
+    // set `baseURI` (only owner)
+    // the URI of each token is `baseURL + metaId`
+    // When update `baseURI`, old tokens will not modify their URI
+    function updateBaseURI(string memory newBaseURI) public onlyOwner {
+        baseURI = newBaseURI;
     }
 
-    // authorizes the caller
-    modifier onlyOwner {
-        require(msg.sender == owner, "Only owner can call this function.");
-        _;
+    constructor(string memory _baseTokenURI) ERC721("AstralMaskStore", "AMS") {
+        setBaseURI(_baseTokenURI);
     }
 
-    // set the key-value pair
-    function set(string memory key, string memory value) public onlyOwner {
-        data[key] = value;
-        keys.push(key);
+    // Set MetaId when mint
+    function mintToken(string memory metaId) public {
+        uint256 newTokenId = tokenIdCounter;
+        _safeMint(msg.sender, newTokenId);
+        _setTokenURI(newTokenId, string(abi.encodePacked(baseTokenURI, metaId)));
+        tokenIdCounter++;
     }
 
-    // change the owner of the contract
-    function transferOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "New owner cannot be the zero address.");
-        owner = newOwner;
+    function setKeyValue(uint256 tokenId, string memory key, string memory value) public {
+        require(ownerOf(tokenId) == msg.sender, "Not the owner of the token");
+        keyValueStore[tokenId][key] = value;
     }
 
-    // get all key-value pairs
-    function getAll() public view returns (string[] memory, string[] memory) {
-        string[] memory values = new string[](keys.length);
+    function getKeyValue(uint256 tokenId, string memory key) public view returns (string memory) {
+        return keyValueStore[tokenId][key];
+    }
 
-        for (uint i = 0; i < keys.length; i++) {
-            values[i] = data[keys[i]];
-        }
-
-        return (keys, values);
+    function deleteKeyValue(uint256 tokenId, string memory key) public {
+        require(ownerOf(tokenId) == msg.sender, "Not the owner of the token");
+        delete keyValueStore[tokenId][key];
     }
 }
