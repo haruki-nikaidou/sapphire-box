@@ -27,6 +27,9 @@ contract KeyValueStore is ERC721URIStorage {
     function updateBaseURI(string memory newBaseURI) public onlyOwner {
         baseTokenURI = newBaseURI;
     }
+    function resetMetaStoreAddress(address _newAddress) public  onlyOwner {
+        metaStoreAddress = _newAddress;
+    }
 
     constructor(string memory _baseTokenURI, address _metaStoreAddress) payable 
         ERC721("AstralMaskStore", "AMS") {

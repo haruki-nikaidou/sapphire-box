@@ -51,7 +51,7 @@ contract MetaStorage {
         return json;
     }
 
-    function addMeta(uint256 tokenId, string calldata _sheetName) external onlyOwner {
+    function addMeta(uint256 tokenId, string calldata _sheetName) external onlyKvStore {
         sheetNames[tokenId] = _sheetName;
     }
 
