@@ -40,10 +40,6 @@ contract MetaStorage {
         image = _image;
     }
 
-    function addSheetName(uint256 tokenId, string calldata _sheetName) external onlyKvStore {
-        sheetNames[tokenId] = _sheetName;
-    }
-
     function getTokenMeta(uint256 tokenId) external view returns (string memory) {
         string memory tokenName = string(abi.encodePacked(namePrefix, " #", uintToString(tokenId)));
         string memory json = string(abi.encodePacked(
