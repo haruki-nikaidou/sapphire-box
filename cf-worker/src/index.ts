@@ -15,7 +15,7 @@ async function handleRequest(request: Request): Promise<Response> {
 
     try {
         const contractData = await callPolygon(contractParam);
-        return new Response(JSON.stringify(contractData), {
+        return new Response(contractData, {
             headers: { 'Content-Type': 'application/json' },
         });
     } catch {
